@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RJSC Fee Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#d9f0ee;--bg2:#e3e1fb;--blob1:#7fd4c8;--blob2:#a9a3f5;--blob3:#f6c9b0;
+  --glass:rgba(255,255,255,.48);--glass-strong:rgba(255,255,255,.88);--stroke:rgba(255,255,255,.75);
+  --text:#12303a;--muted:#4f6a73;--accent:#0f8b7e;--accent-ink:#fff;--line:rgba(18,48,58,.12);--shadow:0 18px 50px rgba(30,70,90,.16);
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg1:#0b1f26;--bg2:#17163a;--blob1:#12786e;--blob2:#4a43b8;--blob3:#9a4f3a;
+  --glass:rgba(255,255,255,.08);--glass-strong:rgba(22,30,46,.92);--stroke:rgba(255,255,255,.16);
+  --text:#e8f3f5;--muted:#9bb3ba;--accent:#4fd6c5;--accent-ink:#06211e;--line:rgba(255,255,255,.14);--shadow:0 18px 50px rgba(0,0,0,.4);}}
+:root[data-theme="dark"]{
+  --bg1:#0b1f26;--bg2:#17163a;--blob1:#12786e;--blob2:#4a43b8;--blob3:#9a4f3a;
+  --glass:rgba(255,255,255,.08);--glass-strong:rgba(22,30,46,.92);--stroke:rgba(255,255,255,.16);
+  --text:#e8f3f5;--muted:#9bb3ba;--accent:#4fd6c5;--accent-ink:#06211e;--line:rgba(255,255,255,.14);--shadow:0 18px 50px rgba(0,0,0,.4);}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;font-family:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--text);
+  background:radial-gradient(40vmax 40vmax at 8% 12%,var(--blob1),transparent 60%),radial-gradient(45vmax 45vmax at 95% 20%,var(--blob2),transparent 60%),radial-gradient(40vmax 40vmax at 60% 100%,var(--blob3),transparent 60%),linear-gradient(135deg,var(--bg1),var(--bg2));
+  background-attachment:fixed;padding:28px 16px 40px}
+main{max-width:980px;margin:0 auto}
+header{margin-bottom:22px}
+h1{font-size:clamp(26px,4.5vw,36px);margin:0 0 6px;font-weight:800;letter-spacing:-.02em}
+header p{margin:0;color:var(--muted);font-size:15px;max-width:60ch;line-height:1.5}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:start}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--glass);border:1px solid var(--stroke);border-radius:22px;padding:22px;box-shadow:var(--shadow);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%)}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px}
+.hint{font-size:12.5px;color:var(--muted);margin-top:5px;min-height:1em}
+input[type=text],input[type=number]{width:100%;font:inherit;font-size:15.5px;color:var(--text);background:var(--glass);border:1px solid var(--stroke);
+  border-radius:13px;padding:12px 14px;outline:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+input:focus-visible{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.cb{position:relative}
+.cb input{padding-right:42px}
+.chev{position:absolute;right:4px;top:4px;bottom:4px;width:36px;border:0;background:transparent;color:var(--muted);font-size:16px;cursor:pointer;border-radius:10px}
+.cb ul{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 6px);margin:0;padding:6px;list-style:none;max-height:260px;overflow:auto;
+  background:var(--glass-strong);border:1px solid var(--stroke);border-radius:14px;box-shadow:var(--shadow)}
+.cb li{padding:10px 12px;border-radius:9px;cursor:pointer;font-size:14.5px}
+.cb li.on,.cb li:hover{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+.cb li.sel{font-weight:700}
+.check{display:flex;gap:10px;align-items:center;font-size:14.5px;font-weight:500;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.total{font-size:clamp(34px,6vw,46px);font-weight:800;letter-spacing:-.03em;margin:2px 0 14px}
+.total small{font-size:15px;font-weight:700;color:var(--muted);margin-right:6px;letter-spacing:0}
+.rows{border-top:1px solid var(--line)}
+.row{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.row span:last-child{text-align:right;font-weight:700;white-space:nowrap}
+.row em{display:block;font-style:normal;font-weight:500;font-size:12px;color:var(--muted)}
+.notes{margin:14px 0 0;padding:0;list-style:none;font-size:12.5px;color:var(--muted);line-height:1.5}
+.notes li{margin-top:6px}
+.empty{color:var(--muted);font-size:14.5px;line-height:1.5}
+footer{margin-top:20px;font-size:12.5px;color:var(--muted);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>RJSC fee calculator</h1>
+  <p>Choose a service, pick an entity type and enter the details. The total updates as you type.</p>
+</header>
+<div class="grid">
+  <section class="card" id="form" aria-label="Inputs"></section>
+  <section class="card" id="result" aria-live="polite" aria-label="Fee result"></section>
+</div>
+<footer>Rates from ebrs.rjsc.gov.bd/public/fees, collected 15 November 2026. This is an estimate; confirm on the official portal before paying.</footer>
+</main>
+<script>
+/* ============ FEE DATABASE (source: ebrs.rjsc.gov.bd/public/fees) ============ */
+const VAT = 0.15;
+const ENT = {
+  PVT:'Private Company', PUB:'Public Company', OPC:'OPC', US29:'US 29 (Upper Subsidiary)', US28:'US 28',
+  TO:'Trade Organization', PF:'Partnership Firm', SOC:'Society', FC:'Foreign Company'
+};
+const DB = {
+  nameClearance: {PVT:500,PUB:500,OPC:500,US29:500,US28:500,TO:500,PF:500,SOC:2000,FC:null},   // per name, before VAT
+  regFiling:     {PVT:1200,PUB:1600,OPC:1200,US29:1600,US28:2400,TO:2400,PF:0,SOC:0,FC:3000},   // before VAT
+  regFlat:       {US29:7500,US28:7500,TO:7500,PF:5000,SOC:15000,FC:3000},                       // before VAT
+  capitalBased:  ['PVT','PUB','OPC'],
+  capitalSlabs:  [{upToLakh:10,rate:0},{upToLakh:50,rate:80},{upToLakh:Infinity,rate:130}],      // per lakh or part
+  stampCapital:  [{upTo:4000000,fee:12000},{upTo:12000000,fee:32000},{upTo:Infinity,fee:52000}],
+  stampFlat:     {US29:12000,US28:300,TO:300},
+  certDocs:      {PVT:3,PUB:3,OPC:3,US29:3,US28:2,TO:2,SOC:1,PF:0,FC:0},
+  certCopy:      {fee:500,stamp:100,court:20},
+  returns: {      // per document
+    company:{PVT:200,PUB:200}, FC:500, TO:400, SOC:800, PF:500,
+    delay:{upToYears:3,ratePerYear:500,afterRatePerYear:700}
+  },
+  charges: {      // [first 5 lakh, each extra 5 lakh up to 50 lakh, each extra 5 lakh above 50 lakh]
+    company:[250,200,100], FC:[400,300,200], TO:[300,200,100]
+  },
+  chargeInspection:{company:500,FC:500,TO:300},
+  receiverEnrollment:500,
+  windingUp:200
+};
+
+/* ============ HELPERS ============ */
+const r2 = n => Math.round(n*100)/100;
+const fmt = n => r2(n).toLocaleString('en-IN',{maximumFractionDigits:2});
+const line = (label,base,vat=false,detail='') => ({label,detail,base:r2(base),vat:vat?r2(base*VAT):0});
+const opts = keys => keys.map(k=>({id:k,label:ENT[k]}));
+const chargeGroup = e => (e==='PVT'||e==='PUB')?'company':e;
+
+/* ============ SERVICES ============ */
+const SERVICES = [
+ { id:'name', label:'Name clearance', ents:opts(['PVT','PUB','OPC','US29','US28','TO','PF','SOC','FC']),
+   fields:[{k:'names',label:'Number of names',def:1,min:1}],
+   calc:(e,v)=>{
+     const f=DB.nameClearance[e];
+     if(f==null) return {na:'Name clearance is not listed for foreign companies.'};
+     return {lines:[line(`Name clearance × ${v.names}`,f*v.names,true,`${fmt(f)} per name`)]};
+   }},
+ { id:'reg', label:'Registration', ents:opts(['PVT','PUB','OPC','US29','US28','TO','PF','SOC','FC']),
+   fields:[
+     {k:'capital',label:'Authorized capital (BDT)',def:1000000,min:0,step:100000,when:e=>DB.capitalBased.includes(e),lakh:true},
+     {k:'cert',label:'Include certified copies of registration documents',type:'check',def:true,when:e=>DB.certDocs[e]>0}
+   ],
+   calc:(e,v)=>{
+     const L=[],N=[]; const cap=DB.capitalBased.includes(e);
+     L.push(line('Registration filing fee',DB.regFiling[e],true));
+     if(cap){
+       const units=Math.ceil(v.capital/100000); let prev=0,fee=0;
+       DB.capitalSlabs.forEach(s=>{const top=Math.min(units,s.upToLakh); if(top>prev){fee+=(top-prev)*s.rate;} prev=Math.max(prev,top);});
+       L.push(line('Capital-based registration fee',fee,true,`${units} lakh (or part), tiered`));
+       const st=DB.stampCapital.find(s=>v.capital<=s.upTo).fee;
+       L.push(line('Stamp duty (Memorandum & Articles)',st,false));
+       N.push('Capital-based fee is applied tier by tier (nothing up to 10 lakh, 80 per lakh to 50 lakh, 130 per lakh above) and VAT is added. The site does not spell this out, so check it against the portal.');
+     } else {
+       if(DB.regFlat[e]!=null) L.push(line('Flat registration fee',DB.regFlat[e],true));
+       if(DB.stampFlat[e]!=null) L.push(line('Stamp duty (Memorandum & Articles)',DB.stampFlat[e],false));
+     }
+     const n=DB.certDocs[e];
+     if(n>0 && v.cert){ L.push(...certLines(n)); }
+     return {lines:L,notes:N};
+   }},
+ { id:'returns', label:'Returns filing', ents:opts(['PVT','PUB','FC','TO','SOC','PF']),
+   fields:[
+     {k:'docs',label:'Number of documents',def:1,min:1},
+     {k:'delay',label:'Years of delay (0 if on time)',def:0,min:0,when:e=>['PVT','PUB','TO'].includes(e)}
+   ],
+   calc:(e,v)=>{
+     const R=DB.returns; const rate=R.company[e]??R[e];
+     const L=[line(`Filing × ${v.docs}`,rate*v.docs,false,`${fmt(rate)} per document`)];
+     const N=[];
+     if(['PVT','PUB','TO'].includes(e) && v.delay>0){
+       const y=Math.ceil(v.delay), d=R.delay, per=y>d.upToYears?d.afterRatePerYear:d.ratePerYear;
+       L.push(line(`Late fee: ${y} year${y>1?'s':''} × ${v.docs} doc${v.docs>1?'s':''}`,per*y*v.docs,false,`${fmt(per)} per year, per document`));
+       N.push('Late fee is counted per document and per year or part of a year; confirm how the portal applies it.');
+     }
+     if(e==='PF') N.push('Partnership firm rate applies to Form II, Form V or Form VI.');
+     return {lines:L,notes:N};
+   }},
+ { id:'charge', label:'Mortgage, debenture & charge registration', ents:opts(['PVT','PUB','FC','TO']),
+   fields:[{k:'amount',label:'Secured amount (BDT)',def:1000000,min:0,step:500000,lakh:true}],
+   calc:(e,v)=>{
+     const [b,m,h]=DB.charges[chargeGroup(e)], a=v.amount;
+     if(a<=0) return {lines:[line('Registration of charge',0)]};
+     const L=[line('First 5 lakh',b)];
+     if(a>500000){const u=Math.ceil((Math.min(a,5000000)-500000)/500000); L.push(line(`Next ${u} × 5 lakh (up to 50 lakh)`,u*m,false,`${fmt(m)} each`));}
+     if(a>5000000){const u=Math.ceil((a-5000000)/500000); L.push(line(`Above 50 lakh: ${u} × 5 lakh`,u*h,false,`${fmt(h)} each`));}
+     return {lines:L};
+   }},
+ { id:'inspect', label:'Charge register inspection', ents:opts(['PVT','PUB','FC','TO']), fields:[],
+   calc:e=>({lines:[line('Mortgage, debenture & charge register inspection',DB.chargeInspection[chargeGroup(e)])]})},
+ { id:'receiver', label:'Receiver enrollment register', ents:opts(['PVT','PUB','FC','TO']), fields:[],
+   calc:()=>({lines:[line('Receiver enrollment register',DB.receiverEnrollment)]})},
+ { id:'cert', label:'Certified copy (separate application)', fields:[{k:'docs',label:'Number of certifiable documents',def:1,min:1}],
+   calc:(e,v)=>({lines:certLines(v.docs)})},
+ { id:'wind', label:'Winding up', fields:[{k:'docs',label:'Number of documents',def:1,min:1}],
+   calc:(e,v)=>({lines:[line(`Winding-up documents × ${v.docs}`,DB.windingUp*v.docs,false,`${fmt(DB.windingUp)} per document`)]})}
+];
+function certLines(n){
+  const c=DB.certCopy;
+  return [line(`Certified copy fee × ${n}`,c.fee*n,true),line(`Certified copy stamp × ${n}`,c.stamp*n,false),line('Court fee (once per application)',c.court,true)];
+}
+
+/* ============ UI ============ */
+const form=document.getElementById('form'), result=document.getElementById('result');
+const S={svc:SERVICES[0],ent:SERVICES[0].ents[0].id,vals:{}};
+function resetVals(){S.vals={};S.svc.fields.forEach(f=>S.vals[f.k]=f.def);}
+resetVals();
+
+function combo(label,options,cur,pick){
+  const w=document.createElement('div'); w.className='field';
+  w.innerHTML=`<label></label><div class="cb"><input type="text" autocomplete="off" role="combobox" aria-expanded="false"><button type="button" class="chev" tabindex="-1" aria-label="Show options">▾</button><ul role="listbox" hidden></ul></div>`;
+  w.firstChild.textContent=label;
+  const inp=w.querySelector('input'), ul=w.querySelector('ul'), chev=w.querySelector('.chev');
+  const curOpt=options.find(o=>o.id===cur); inp.value=curOpt.label;
+  let items=[],idx=-1;
+  const open=q=>{
+    const s=(q||'').toLowerCase(); items=options.filter(o=>o.label.toLowerCase().includes(s)); ul.innerHTML='';
+    items.forEach(o=>{const li=document.createElement('li'); li.textContent=o.label; li.setAttribute('role','option'); if(o.id===cur) li.className='sel';
+      li.onmousedown=e=>{e.preventDefault(); choose(o);}; ul.appendChild(li);});
+    idx=-1; ul.hidden=!items.length; inp.setAttribute('aria-expanded',String(!ul.hidden));
+  };
+  const close=()=>{ul.hidden=true; inp.setAttribute('aria-expanded','false');};
+  const choose=o=>{close(); inp.value=o.label; if(o.id!==cur) pick(o.id);};
+  const mark=()=>[...ul.children].forEach((li,i)=>{li.classList.toggle('on',i===idx); if(i===idx) li.scrollIntoView({block:'nearest'});});
+  inp.onfocus=()=>{inp.select(); open('');};
+  inp.oninput=()=>open(inp.value);
+  inp.onblur=()=>{close(); inp.value=curOpt.label;};
+  inp.onkeydown=e=>{
+    if(e.key==='ArrowDown'){e.preventDefault(); if(ul.hidden) open(''); idx=Math.min(idx+1,items.length-1); mark();}
+    else if(e.key==='ArrowUp'){e.preventDefault(); idx=Math.max(idx-1,0); mark();}
+    else if(e.key==='Enter'){e.preventDefault(); const o=items[idx>=0?idx:0]; if(o) choose(o);}
+    else if(e.key==='Escape'){close(); inp.value=curOpt.label;}
+  };
+  chev.onmousedown=e=>{e.preventDefault(); if(document.activeElement===inp && !ul.hidden) close(); else {inp.focus(); open('');}};
+  return w;
+}
+
+function render(){
+  form.innerHTML='';
+  form.appendChild(combo('Service',SERVICES.map(s=>({id:s.id,label:s.label})),S.svc.id,id=>{S.svc=SERVICES.find(s=>s.id===id); if(S.svc.ents && !S.svc.ents.some(o=>o.id===S.ent)) S.ent=S.svc.ents[0].id; resetVals(); render();}));
+  if(S.svc.ents) form.appendChild(combo('Entity type',S.svc.ents,S.ent,id=>{S.ent=id; render();}));
+  S.svc.fields.forEach(f=>{
+    if(f.when && !f.when(S.ent)) return;
+    const w=document.createElement('div'); w.className='field';
+    if(f.type==='check'){
+      w.innerHTML=`<label class="check"><input type="checkbox"><span></span></label>`;
+      const c=w.querySelector('input'); c.checked=S.vals[f.k]; w.querySelector('span').textContent=f.label;
+      c.onchange=()=>{S.vals[f.k]=c.checked; calc();};
+    } else {
+      w.innerHTML=`<label></label><input type="number" inputmode="numeric"><div class="hint"></div>`;
+      w.firstChild.textContent=f.label;
+      const i=w.querySelector('input'), h=w.querySelector('.hint'); i.min=f.min??0; if(f.step) i.step=f.step; i.value=S.vals[f.k];
+      const hint=()=>{h.textContent=f.lakh?`= ${fmt((+i.value||0)/100000)} lakh`:'';};
+      i.oninput=()=>{S.vals[f.k]=Math.max(+i.value||0,f.min??0); hint(); calc();}; hint();
+    }
+    form.appendChild(w);
+  });
+  calc();
+}
+
+function calc(){
+  const out=S.svc.calc(S.ent,S.vals);
+  if(out.na){result.innerHTML=`<p class="empty"></p>`; result.firstChild.textContent=out.na; return;}
+  let total=0, vat=0;
+  const rows=out.lines.map(l=>{total+=l.base+l.vat; vat+=l.vat;
+    return `<div class="row"><span>${l.label}${l.detail?`<em>${l.detail}</em>`:''}</span><span>${fmt(l.base+l.vat)}${l.vat?`<em>incl. ${fmt(l.vat)} VAT</em>`:''}</span></div>`;}).join('');
+  const notes=(out.notes||[]).map(n=>`<li>${n}</li>`).join('');
+  result.innerHTML=`<div class="total"><small>BDT</small>${fmt(total)}</div><div class="rows">${rows}</div>
+    ${vat?`<p class="hint">Includes ${fmt(vat)} BDT VAT at 15%.</p>`:''}${notes?`<ul class="notes">${notes}</ul>`:''}`;
+}
+render();
+</script>
+</body>
+</html>
